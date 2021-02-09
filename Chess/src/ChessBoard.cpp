@@ -1,7 +1,13 @@
 #include "ChessBoard.h"
 #include <cctype>
+#include <algorithm>
 
 ChessBoard::ChessBoard() {
+	for (int i = 0; i < BOARD_WIDTH; i++)
+		for (int j = 0; j < BOARD_HEIGHT; j++)
+			board[i][j] = start_board[i][j];
+
+	latest_move = { 0, 0, 0, 0 };
 	for (int i = 0; i < BOARD_WIDTH; i++) {
 		for (int j = 0; j < BOARD_HEIGHT; j++) {
 			if (board[i][j] != ' ') {
@@ -12,6 +18,24 @@ ChessBoard::ChessBoard() {
 					chess_pieces.back()->SetParentBoard(this);
 					chess_pieces.back()->Initialize();
 				}
+			}
+		}
+	}
+}
+
+void ChessBoard::Reset() {
+	for (int i = 0; i < BOARD_WIDTH; i++)
+		for (int j = 0; j < BOARD_HEIGHT; j++)
+			board[i][j] = start_board[i][j];
+
+	int p_counter = 0;
+	for (int i = 0; i < BOARD_WIDTH; i++) {
+		for (int j = 0; j < BOARD_HEIGHT; j++) {
+			if (board[i][j] != ' ') {
+				chess_pieces[p_counter]->SetColor(FindPieceColor(board[i][j]));
+				chess_pieces[p_counter]->SetBoardPosition(Ember::IVec2(j, i));
+				chess_pieces[p_counter]->Initialize();
+				p_counter++;
 			}
 		}
 	}
@@ -63,7 +87,7 @@ bool ChessBoard::CapturePiece(const Ember::IVec2& capture_position) {
 	for (size_t i = 0; i < chess_pieces.size(); i++) 
 		if (chess_pieces[i]->GetBoardPosition() == capture_position) {
 			board[capture_position.x][capture_position.y] = ' ';
-			chess_pieces.erase(chess_pieces.begin() + i);
+			chess_pieces[i]->SetBoardPosition({ -1, -1 });
 			return true;
 		}
 
@@ -84,6 +108,86 @@ bool ChessBoard::IsTherePieceOn(const Ember::IVec2& position) {
 		if (piece->GetBoardPosition() == position)
 			return true;
 	return false;
+}
+
+bool ChessBoard::Check(PieceColor current_player_color) {
+	ChessPiece* king = GetPieceFromCharacter(GetTypeCharacterFromColor('k', current_player_color));
+
+	if (king != nullptr) {
+		for (auto& piece : GetPieces()) {
+			if (piece->GetColor() != king->GetColor()) {
+				if (piece->CanPieceGoHere(king->GetBoardPosition())) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+int ChessBoard::GetNumberOfPieces(PieceColor color) {
+	int piece_count = 0;
+	for (auto& piece : GetPieces()) 
+		if (piece->GetColor() == color && piece->GetBoardPosition() != Ember::IVec2(-1, -1))
+			piece_count++;
+
+	return piece_count;
+}
+
+bool ChessBoard::Checkmate(PieceColor current_player_color) {
+	bool check_mate = true;
+	
+	if (Check(current_player_color)) {
+		for (auto& piece : chess_pieces) {
+			if (piece->GetColor() == current_player_color) {
+				if (!LegalMovesInCheck(piece).empty()) {
+					check_mate = false;
+					break;
+				}
+			}
+		}
+	}
+	else {
+		check_mate = false;
+	}
+
+	return check_mate;
+}
+
+std::vector<Ember::IVec2> ChessBoard::LegalMovesInCheck(ChessPiece* piece) {
+	std::vector<Ember::IVec2> legal_moves;
+
+	auto moves = piece->GenerateAllPossibleMoves();
+	for (auto& move : moves) {
+		Ember::IVec2 original = piece->GetBoardPosition();
+
+		char deleting_spot_type = ' ';
+		char original_type = ' ';
+		original_type = GetTypeFromPosition(original);
+		ChessPiece* moving_piece = GetPiece(move);
+		if (moving_piece != nullptr) {
+			moving_piece->SetBoardPosition({ -1, -1 });
+			deleting_spot_type = board[move.y][move.x];
+		}
+		board[move.y][move.x] = original_type;
+		board[original.y][original.x] = ' ';
+
+		piece->SetBoardPosition(move);
+		if (!Check(piece->GetColor())) 
+			legal_moves.push_back(move);
+
+		piece->SetBoardPosition(original);
+		board[original.y][original.x] = original_type;
+		if (moving_piece != nullptr) {
+			moving_piece->SetBoardPosition(move);
+			board[move.y][move.x] = deleting_spot_type;
+		}
+		else {
+			board[move.y][move.x] = ' ';
+		}
+	}
+
+	return legal_moves;
 }
 
 PieceColor FindPieceColor(char piece) {

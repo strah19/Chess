@@ -22,15 +22,19 @@ public:
 	void SetColor(PieceColor c) { color = c; }
 	void SetBoardPosition(const Ember::IVec2& position) { board_position = position; }
 	void SetParentBoard(ChessBoard* board) { this->board = board; }
+	void SetMovingLocation(const Ember::IVec2& position) { wanting_position = position; }
 
 	virtual void Initialize() { }
-	virtual bool MovePiece(const Ember::IVec2& new_position) { return false; }
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) { return false; }
+	virtual void MovePiece() { }
+	virtual std::vector<Ember::IVec2> GenerateAllPossibleMoves();
 	bool Capture(const Ember::IVec2& new_position);
 protected:
 	ChessBoard* board;
 	PieceColor color = PieceColor::NONE;
 	size_t spritesheet_location;
 	Ember::IVec2 board_position;
+	Ember::IVec2 wanting_position;
 
 	void SeekSpriteLocation() {
 		if (color == PieceColor::BLACK)
@@ -44,12 +48,12 @@ typedef ChessPiece* (__stdcall* CreateChessPieceFn)(void);
 class Pawn : public ChessPiece {
 public:
 	virtual void Initialize() override;
-	virtual bool MovePiece(const Ember::IVec2& new_position) override;
+	virtual void MovePiece() override;
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) override;
 
 	static ChessPiece* __stdcall Create() { return new Pawn(); }
 private:
-	bool two_step;
-	bool Move(const Ember::IVec2& new_position);
+	bool en_passant = false;
 };
 
 class King;
@@ -57,7 +61,8 @@ class King;
 class Rook : public ChessPiece {
 public:
 	virtual void Initialize() override;
-	virtual bool MovePiece(const Ember::IVec2& new_position) override;
+	virtual void MovePiece() override;
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) override;
 
 	static ChessPiece* __stdcall Create() { return new Rook(); }
 private:
@@ -68,7 +73,8 @@ private:
 class Knight : public ChessPiece {
 public:
 	virtual void Initialize() override;
-	virtual bool MovePiece(const Ember::IVec2& new_position) override;
+	virtual void MovePiece() override;
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) override;
 
 	static ChessPiece* __stdcall Create() { return new Knight(); }
 private:
@@ -81,7 +87,8 @@ private:
 class Bishop : public ChessPiece {
 public:
 	virtual void Initialize() override;
-	virtual bool MovePiece(const Ember::IVec2& new_position) override;
+	virtual void MovePiece() override;
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) override;
 
 	static ChessPiece* __stdcall Create() { return new Bishop(); }
 private:
@@ -90,7 +97,8 @@ private:
 class Queen : public ChessPiece {
 public:
 	virtual void Initialize() override;
-	virtual bool MovePiece(const Ember::IVec2& new_position) override;
+	virtual void MovePiece() override;
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) override;
 
 	static ChessPiece* __stdcall Create() { return new Queen(); }
 private:
@@ -99,14 +107,21 @@ private:
 class King : public ChessPiece {
 public:
 	virtual void Initialize() override;
-	virtual bool MovePiece(const Ember::IVec2& new_position) override;
+	virtual void MovePiece() override;
+	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) override;
 
 	static ChessPiece* __stdcall Create() { return new King(); }
 private: 
 	bool can_castle = true;
-};
 
-bool MoveAlongTheLines(const Ember::IVec2& range, int opposite_base, ChessPiece* piece);
+	const int NOT_CASTLE = 0;
+	const int LEFT_CASTLE = 1;
+	const int RIGHT_CASTLE = 2;
+
+	int is_going_to_castle = NOT_CASTLE;
+
+	Rook* GetRook(const Ember::IVec2& rook_position);
+};
 
 class ChessPieceFactory {
 public:

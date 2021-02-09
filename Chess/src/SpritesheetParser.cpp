@@ -30,10 +30,6 @@ std::vector<Ember::Rect> SpritesheetParser::Read(const std::string& file_path) {
 		return true;
 	});
 
-	for (auto& d : dividers) {
-		std::cout << d.pos << " " << d.size << std::endl;
-	}
-
 	file.CloseFile();
 
 	return dividers;
