@@ -88,6 +88,7 @@ bool ChessBoard::CapturePiece(const Ember::IVec2& capture_position) {
 		if (chess_pieces[i]->GetBoardPosition() == capture_position) {
 			board[capture_position.x][capture_position.y] = ' ';
 			chess_pieces[i]->SetBoardPosition({ -1, -1 });
+			captured_flag = true;
 			return true;
 		}
 

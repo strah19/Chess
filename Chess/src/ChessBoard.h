@@ -43,7 +43,11 @@ public:
 	Ember::Rect GetLatestMove() const { return latest_move; }
 	char GetTypeFromPosition(const Ember::IVec2& position) { return board[position.y][position.x]; }
 	char board[BOARD_WIDTH][BOARD_HEIGHT];
+
+	bool Captured() const { return captured_flag; }
+	void ResetCaptureFlag() { captured_flag = false; }
 private:
+	bool captured_flag = false;
 
 	std::vector<ChessPiece*> chess_pieces;
 	Ember::Rect latest_move = { 0, 0, 0, 0 };

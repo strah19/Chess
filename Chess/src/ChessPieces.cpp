@@ -314,10 +314,10 @@ void King::MovePiece() {
 	if (is_going_to_castle != NOT_CASTLE) {
 		if (is_going_to_castle == LEFT_CASTLE) {
 			Rook* left_rook = GetRook({ 0, board_position.y });
-			board->MovePiece(this, { 1, board_position.y });
-			board->MovePiece(left_rook, { 2, left_rook->board_position.y });
-			board_position.x = 1;
-			left_rook->board_position.x = 2;
+			board->MovePiece(this, { 2, board_position.y });
+			board->MovePiece(left_rook, { 3, left_rook->board_position.y });
+			board_position.x = 2;
+			left_rook->board_position.x = 3;
 			left_rook->can_castle = false;
 			can_castle = false;
 		}
@@ -345,38 +345,6 @@ bool King::CanPieceGoHere(const Ember::IVec2& new_position) {
 
 	difference.x = abs(difference.x);
 	difference.y = abs(difference.y);
-
-	if (can_castle) {
-		Rook* left_rook = GetRook({ 0, new_position.y });
-		Rook* right_rook = GetRook({ BOARD_WIDTH - 1, new_position.y });
-		
-		bool can_move = false;
-		if (new_position == Ember::IVec2(0, board_position.y) || new_position == Ember::IVec2(BOARD_WIDTH - 1, board_position.y)) {
-			can_move = true;
-			int low = std::min(new_position.x, board_position.x);
-			int high = std::max(new_position.x, board_position.x);
-			for (int i = low + 1; i < high; i++) {
-				ChessPiece* piece = board->GetPiece({ i, new_position.y });
-				if (piece != nullptr && piece != this) {
-					can_move = false;
-					break;
-				}
-			}
-		}
-		if (left_rook != nullptr) {
-			if (left_rook->can_castle && can_castle && can_move && left_rook->board_position == Ember::IVec2(new_position.x, new_position.y)) {
-				is_going_to_castle = LEFT_CASTLE;
-				return true;
-			}
-		}
-		if (right_rook != nullptr) {
-			if (right_rook->can_castle && can_castle && can_move && right_rook->board_position == Ember::IVec2(new_position.x, new_position.y)) {
-				is_going_to_castle = RIGHT_CASTLE;
-				return true;
-			}
-		}
-	}
-
 	if (difference.x <= 1 && difference.y <= 1 && difference.x >= -1 && difference.y >= -1) {
 		if (board->IsTherePieceOn(new_position)) {
 			if (board->GetPiece(new_position)->GetColor() != color)
@@ -385,6 +353,33 @@ bool King::CanPieceGoHere(const Ember::IVec2& new_position) {
 		else
 			return true;
 	}
+	else if (can_castle) {
+		Rook* left_rook = GetRook({ 0, new_position.y });
+		Rook* right_rook = GetRook({ BOARD_WIDTH - 1 , new_position.y });
+		
+		bool can_move = true;
+		int low = std::min(new_position.x, board_position.x);
+		int high = std::max(new_position.x, board_position.x);
+		for (int i = low + 1; i < high; i++) {
+			ChessPiece* piece = board->GetPiece({ i, new_position.y });
+			if (piece != nullptr && piece != this) {
+				can_move = false;
+				break;
+			}
+		}
+
+		if(left_rook != nullptr)
+			if (left_rook->can_castle && can_move && left_rook->GetBoardPosition() == Ember::IVec2(new_position.x, new_position.y)) {
+				is_going_to_castle = LEFT_CASTLE;
+				return true;
+			}
+		if (right_rook != nullptr)
+			if (right_rook->can_castle && can_move && right_rook->GetBoardPosition() == Ember::IVec2(new_position.x, new_position.y)) {
+				is_going_to_castle = RIGHT_CASTLE;
+				return true;
+			}
+	}
+
 	return false;
 }
 

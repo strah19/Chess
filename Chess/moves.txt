@@ -1,0 +1,7 @@
+NEW GAME: Nc3 d6 d4 e6 Be3 f6 Qd2 g6 Ka1 
+NEW GAME: Nc3 d6 d4 e6 Bf4 f6 Qd2 e5 Ka1 
+NEW GAME: Nc3 d6 d4 e6 Be3 f6 Qd2 e5 Ka1 
+NEW GAME: Nc3 e6 d4 e5 Be3 f6 Qd3 d6 0-0-0 
+NEW GAME: Nh3 e6 e3 f6 Bd3 e5 Kh1 
+NEW GAME: Nf3 d6 e3 e6 Bd3 d5 0-0 Bd6 e4 Nf6 
+e5 0-0 

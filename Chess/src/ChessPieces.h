@@ -104,6 +104,10 @@ public:
 private:
 };
 
+const int NOT_CASTLE = 0;
+const int LEFT_CASTLE = 1;
+const int RIGHT_CASTLE = 2;
+
 class King : public ChessPiece {
 public:
 	virtual void Initialize() override;
@@ -113,10 +117,6 @@ public:
 	static ChessPiece* __stdcall Create() { return new King(); }
 private: 
 	bool can_castle = true;
-
-	const int NOT_CASTLE = 0;
-	const int LEFT_CASTLE = 1;
-	const int RIGHT_CASTLE = 2;
 
 	int is_going_to_castle = NOT_CASTLE;
 

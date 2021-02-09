@@ -1,6 +1,7 @@
 #include "Core/Application.h"
 #include "Assets/Texture.h"
 #include "Animation/Spritesheet.h"
+#include "Assets/Font.h"
 
 #include "ChessPieces.h"
 #include "ChessBoard.h"
@@ -15,14 +16,21 @@ const Ember::IVec2 top_down_padding = { 10, 200 };
 class Chess : public Ember::Application {
 public:
 	void OnCreate() {
-		chess_piece_texture.Initialize("ChessPixelArt/Figures1.png", renderer);
+		chess_piece_texture.Initialize("res/Figures1.png", renderer);
 
 		SpritesheetParser parser;
-		chess_piece_sheet.SetDividers(parser.Read("ChessPixelArt/spritesheetconfig.txt"));
+		chess_piece_sheet.SetDividers(parser.Read("res/spritesheetconfig.txt"));
 		properties->name = application_name + " - Player 1";
 		SDL_Surface* icon = Ember::Texture::LoadSurface("chess/black_king.png");
 		SDL_SetWindowIcon(window->GetNativeWindow(), icon);
 		SDL_FreeSurface(icon);
+
+		font.Initialize(renderer, "res/Inconsolata-Regular.ttf", 14);
+	}
+
+	~Chess() {
+		if(!chess_notation_moves.empty())
+			SaveMoves();
 	}
 
 	void ConsterVec(Ember::IVec2& vec) {
@@ -85,6 +93,27 @@ public:
 			renderer->Rectangle(Ember::Rect({ side_padding.x + move.x * BOARD_SQUARE_WIDTH, top_down_padding.x + move.y * BOARD_SQUARE_HEIGHT, BOARD_SQUARE_WIDTH, BOARD_SQUARE_HEIGHT }), { 66, 184, 182, 100 });
 		}
 
+		for (int i = 0; i < BOARD_HEIGHT; i++) {
+			font.SetPosition(side_padding.x - 10, top_down_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) - (i * BOARD_SQUARE_HEIGHT) - BOARD_SQUARE_HEIGHT);
+			font.UpdateText(i + 1);
+			font.UpdateColor({ 255, 255, 255, 255 });
+			font.Render();
+
+			font.SetPosition(side_padding.x + i * BOARD_SQUARE_WIDTH, top_down_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT));
+			font.UpdateText(nth_letter(i + 1));
+			font.UpdateColor({ 255, 255, 255, 255 });
+			font.Render();
+		}
+
+		int offset = 0;
+		for (auto& chess_note : chess_notation_moves) {
+			font.SetPosition(10, 10 + offset);
+			font.UpdateText(chess_note);
+			font.UpdateColor({ 255, 255, 255, 255 });
+			font.Render();
+			offset += 20;
+		}
+
 		if (game_over) {
 			renderer->Rectangle(Ember::Rect({ 0, 0, properties->width, properties->height }), { 0, 0, 0, 100 });
 			properties->name = "Checkmate!";
@@ -95,6 +124,13 @@ public:
 		}
 
 		renderer->Show();
+	}
+
+	char nth_letter(int n)
+	{
+		if(n >= 1 && n <= 26)
+			return "abcdefghijklmnopqrstuvwxyz"[n - 1];
+		return ' ';
 	}
 
 	void UpdatePieces() {
@@ -131,12 +167,64 @@ public:
 			for (auto& move : all_possible_moves_for_current_selected_piece) {
 				if (selected_square_for_new_piece == move) {
 					current_selected_piece->SetMovingLocation(selected_square_for_new_piece);
+					char type = chess_board.board[selected_square.y][selected_square.x];
 					current_selected_piece->MovePiece();
+
+					char before_move_file = nth_letter(selected_square.x + 1);
+					std::stringstream ss;
+					type = toupper(type);
+					if (type != 'P')
+						ss << type;
+					if (chess_board.Captured()) {
+						if (type == 'P')
+							ss << before_move_file << 'x';
+						else
+							ss << 'x';
+						chess_board.ResetCaptureFlag();
+					}
+
+					ss << nth_letter(selected_square_for_new_piece.x + 1);
+					int correct = selected_square_for_new_piece.y + 1;
+					correct = BOARD_HEIGHT - correct + 1;
+					ss << correct;
+
+					chess_notation_moves.push_back(ss.str());
+
+					if (type == 'K') {
+						Ember::Rect late = chess_board.GetLatestMove();
+						std::cout << late.pos << " " << late.size << std::endl;
+						if (late.x == 0  && late.w == 3)
+							chess_notation_moves.back() = "0-0-0";
+						if (late.x == 7 && late.w == 5)
+							chess_notation_moves.back() = "0-0";
+
+					}
+
 					OnPieceMovement();
+
 					break;
 				}
 			}
 		}
+	}
+
+	void SaveMoves() {
+		Cinder::CFSFile file("moves.txt");
+		const int NUM_OF_MOVES_IN_LINE = 10;
+		file.Write("NEW GAME: ");
+		int c = 0;
+		for (auto& move : chess_notation_moves) {
+			file.Write(move);
+			file.Write(' ');
+			c++;
+			if (c == NUM_OF_MOVES_IN_LINE) {
+				file.Write('\n');
+				c = 0;
+			}
+		}
+		file.Write('\n');
+		chess_notation_moves.clear();
+		file.CloseFile();
 	}
 
 	void OnPieceMovement() {
@@ -162,6 +250,7 @@ public:
 		stalemate = false;
 		selected_square = { 0, 0 };
 		selected_square_for_new_piece = { 0, 0 };
+		SaveMoves();
 	}
 
 	void DrawPiece(ChessPiece& chess_piece) {
@@ -202,6 +291,10 @@ private:
 	bool player = false;
 	bool game_over = false;
 	bool stalemate = false;
+
+	std::vector<std::string> chess_notation_moves;
+
+	Ember::Font font;
 };
 
 int main(int argc, char** argv) {
