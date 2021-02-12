@@ -37,7 +37,7 @@ public:
 	void Reset();
 
 	bool Checkmate(PieceColor current_player_color);
-	std::vector<Ember::IVec2> LegalMovesInCheck(ChessPiece* piece);
+	std::vector<Ember::IVec2> GenerateLegalMoves(ChessPiece* piece);
 	bool Check(PieceColor current_player_color);
 	void AddPiece(ChessPiece* piece) { chess_pieces.push_back(piece); }
 	Ember::Rect GetLatestMove() const { return latest_move; }
@@ -46,8 +46,12 @@ public:
 
 	bool Captured() const { return captured_flag; }
 	void ResetCaptureFlag() { captured_flag = false; }
+
+	void Flip();
+	PieceColor GetSideOnTop() const { return side_starting_on_top; }
 private:
 	bool captured_flag = false;
+	PieceColor side_starting_on_top= PieceColor::BLACK;
 
 	std::vector<ChessPiece*> chess_pieces;
 	Ember::Rect latest_move = { 0, 0, 0, 0 };

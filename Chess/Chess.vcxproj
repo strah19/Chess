@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ChessBoard.cpp" />
+    <ClCompile Include="src\ChessNotation.cpp" />
     <ClCompile Include="src\ChessPieces.cpp" />
     <ClCompile Include="src\CinderFileSystem\CFSFile.cpp" />
     <ClCompile Include="src\CinderFileSystem\CinderStructure.cpp" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ChessBoard.h" />
+    <ClInclude Include="src\ChessNotation.h" />
     <ClInclude Include="src\ChessPieces.h" />
     <ClInclude Include="src\CinderFileSystem\CFSFile.h" />
     <ClInclude Include="src\CinderFileSystem\CinderFileSys.h" />

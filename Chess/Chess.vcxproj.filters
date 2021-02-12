@@ -25,6 +25,7 @@
     <ClCompile Include="src\ChessPieces.cpp" />
     <ClCompile Include="src\ChessBoard.cpp" />
     <ClCompile Include="src\SpritesheetParser.cpp" />
+    <ClCompile Include="src\ChessNotation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\CinderFileSystem\CFSFile.h" />
@@ -57,5 +58,6 @@
     <ClInclude Include="src\ChessPieces.h" />
     <ClInclude Include="src\ChessBoard.h" />
     <ClInclude Include="src\SpritesheetParser.h" />
+    <ClInclude Include="src\ChessNotation.h" />
   </ItemGroup>
 </Project>

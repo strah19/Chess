@@ -32,12 +32,16 @@ void ChessBoard::Reset() {
 	for (int i = 0; i < BOARD_WIDTH; i++) {
 		for (int j = 0; j < BOARD_HEIGHT; j++) {
 			if (board[i][j] != ' ') {
-				chess_pieces[p_counter]->SetColor(FindPieceColor(board[i][j]));
 				chess_pieces[p_counter]->SetBoardPosition(Ember::IVec2(j, i));
 				chess_pieces[p_counter]->Initialize();
 				p_counter++;
 			}
 		}
+	}
+
+	if (side_starting_on_top == PieceColor::WHITE) {
+		Flip();
+		side_starting_on_top = (side_starting_on_top == PieceColor::WHITE) ? PieceColor::BLACK : PieceColor::WHITE;
 	}
 }
 
@@ -102,6 +106,10 @@ void ChessBoard::Log() {
 		}
 		std::cout << std::endl;
 	}
+
+	for (auto& piece : chess_pieces) {
+		std::cout << "Piece: " << piece->GetBoardPosition() << std::endl;
+	}
 }
 
 bool ChessBoard::IsTherePieceOn(const Ember::IVec2& position) {
@@ -141,7 +149,7 @@ bool ChessBoard::Checkmate(PieceColor current_player_color) {
 	if (Check(current_player_color)) {
 		for (auto& piece : chess_pieces) {
 			if (piece->GetColor() == current_player_color) {
-				if (!LegalMovesInCheck(piece).empty()) {
+				if (!GenerateLegalMoves(piece).empty()) {
 					check_mate = false;
 					break;
 				}
@@ -155,10 +163,10 @@ bool ChessBoard::Checkmate(PieceColor current_player_color) {
 	return check_mate;
 }
 
-std::vector<Ember::IVec2> ChessBoard::LegalMovesInCheck(ChessPiece* piece) {
+std::vector<Ember::IVec2> ChessBoard::GenerateLegalMoves(ChessPiece* piece) {
 	std::vector<Ember::IVec2> legal_moves;
 
-	auto moves = piece->GenerateAllPossibleMoves();
+	auto moves = piece->GeneratePseudoMoves();
 	for (auto& move : moves) {
 		Ember::IVec2 original = piece->GetBoardPosition();
 
@@ -174,8 +182,9 @@ std::vector<Ember::IVec2> ChessBoard::LegalMovesInCheck(ChessPiece* piece) {
 		board[original.y][original.x] = ' ';
 
 		piece->SetBoardPosition(move);
-		if (!Check(piece->GetColor())) 
+		if (!Check(piece->GetColor())) {
 			legal_moves.push_back(move);
+		}
 
 		piece->SetBoardPosition(original);
 		board[original.y][original.x] = original_type;
@@ -189,6 +198,36 @@ std::vector<Ember::IVec2> ChessBoard::LegalMovesInCheck(ChessPiece* piece) {
 	}
 
 	return legal_moves;
+}
+
+void ChessBoard::Flip() {
+	for (auto& piece : chess_pieces) {
+		piece->SetBoardPosition({ BOARD_WIDTH - piece->GetBoardPosition().x - 1 , BOARD_WIDTH - piece->GetBoardPosition().y - 1 });
+	}
+	side_starting_on_top = (side_starting_on_top == PieceColor::WHITE) ? PieceColor::BLACK : PieceColor::WHITE;
+	for (int i = 0; i < BOARD_WIDTH; i++) {
+		int start = 0;
+		int end = BOARD_HEIGHT - 1;
+
+		while (start < end) {
+			char t = board[start][i];
+			board[start][i] = board[end][i];
+			board[end][i] = t;
+
+			start++;
+			end--;
+		}
+	}
+
+	for (int j = 0; j < 8; j++) {
+		std::vector<char> t;
+		for (int i = 0; i < 8; i++)
+			t.push_back(board[j][i]);
+		std::reverse(t.begin(), t.end());
+		for (int i = 0; i < 8; i++)
+			board[j][i] = t[i];
+	}
+	Log();
 }
 
 PieceColor FindPieceColor(char piece) {

@@ -1,30 +1,80 @@
 #include "ChessPieces.h"
 #include "ChessBoard.h"
-#include <typeinfo>
 
 ChessPiece::ChessPiece() { 
 	spritesheet_location = 0;
+	board = nullptr;
 }
 
 bool ChessPiece::Capture(const Ember::IVec2& new_position) {
-	if (board->IsTherePieceOn(new_position)) {
-		if (board->GetPiece(new_position)->GetColor() != color)
-			board->CapturePiece(new_position);
-		else
-			return false;
-	}
+	if (board->IsTherePieceOn(new_position)) 
+		board->CapturePiece(new_position);
 	board->MovePiece(this, new_position);
 	SetBoardPosition(new_position);
 	return true;
 }
 
-std::vector<Ember::IVec2> ChessPiece::GenerateAllPossibleMoves() {
+std::vector<Ember::IVec2> ChessPiece::GeneratePseudoMoves() {
 	std::vector<Ember::IVec2> all_possible_moves;
 	for (int i = 0; i < BOARD_WIDTH; i++) 
 		for (int j = 0; j < BOARD_HEIGHT; j++) 
 			if (CanPieceGoHere({ j, i })) 
 				all_possible_moves.push_back({ j, i });
 	return all_possible_moves;
+}
+
+bool ChessPiece::SearchHorizontalLines(const Ember::IVec2& search_between, int base_position) {
+	int low = std::min(search_between.x, search_between.y);
+	int high = std::max(search_between.x, search_between.y);
+	for (int i = low + 1; i < high; i++) {
+		ChessPiece* piece = board->GetPiece({ i, base_position });
+		if (piece != nullptr && piece != this)
+			return false;
+	}
+
+	return true;
+}
+
+bool ChessPiece::SearchVerticalLines(const Ember::IVec2& search_between, int base_position) {
+	int low = std::min(search_between.x, search_between.y);
+	int high = std::max(search_between.x, search_between.y);
+	for (int i = low + 1; i < high; i++) {
+		ChessPiece* piece = board->GetPiece({ base_position, i });
+		if (piece != nullptr && piece != this)
+			return false;
+	}
+
+	return true;
+}
+
+bool ChessPiece::SearchDiagnols(const Ember::IVec2& direction) {
+	Ember::IVec2 test_spots = board_position;
+	while (test_spots != wanting_position) {
+		ChessPiece* piece = board->GetPiece(test_spots);
+		if (piece != nullptr && piece != this) {
+			return false;
+		}
+		test_spots += direction;
+	}
+
+	if (board->IsTherePieceOn(wanting_position)) {
+		if (board->GetPiece(wanting_position)->GetColor() != color)
+			return true;
+	}
+	else
+		return true;
+	
+	return false;
+}
+
+Ember::IVec2 ChessPiece::FindDiagnolDirection() {
+	Ember::IVec2 direction = { -1, -1 };
+	if (wanting_position.x > board_position.x)
+		direction.x = 1;
+	if (wanting_position.y > board_position.y)
+		direction.y = 1;
+
+	return direction;
 }
 
 void Pawn::Initialize() {
@@ -34,7 +84,7 @@ void Pawn::Initialize() {
 }
 
 void Pawn::MovePiece() {
-	int direction = (color == PieceColor::BLACK) ? 1 : -1;
+	int direction = (color == board->GetSideOnTop()) ? 1 : -1;
 	if (en_passant) {
 		board->CapturePiece({ wanting_position.x, wanting_position.y - direction });
 		board->MovePiece(this, wanting_position);
@@ -55,7 +105,7 @@ void Pawn::MovePiece() {
 
 bool Pawn::CanPieceGoHere(const Ember::IVec2& new_position) {
 	wanting_position = new_position;
-	int direction = (color == PieceColor::BLACK) ? 1 : -1;
+	int direction = (color == board->GetSideOnTop()) ? 1 : -1;
 
 	Ember::Rect latest = board->GetLatestMove();
 	if ((latest.pos.y == 1 || latest.pos.y == 6) && (latest.size.y == 3 || latest.size.y == 4)
@@ -70,8 +120,9 @@ bool Pawn::CanPieceGoHere(const Ember::IVec2& new_position) {
 	if (board_position.x == new_position.x) {
 		if (!board->IsTherePieceOn(new_position) && board_position.y + direction + direction == new_position.y && (board_position.y == 1 || board_position.y == 6))
 			return true; 
-		if (!board->IsTherePieceOn(new_position) && board_position.y + direction == new_position.y)
+		if (!board->IsTherePieceOn(new_position) && board_position.y + direction == new_position.y) {
 			return true;
+		}
 	}
 
 	if (new_position.x == board_position.x + 1 || new_position.x == board_position.x - 1) {
@@ -80,7 +131,6 @@ bool Pawn::CanPieceGoHere(const Ember::IVec2& new_position) {
 				if (board->GetPiece(new_position)->GetColor() != color) 
 					return true;
 		}
-
 	}
 
 	return false;
@@ -99,47 +149,20 @@ void Rook::MovePiece() {
 
 bool Rook::CanPieceGoHere(const Ember::IVec2& new_position) {
 	wanting_position = new_position;
-	if (new_position.y == board_position.y) {
-		bool can_move = true;
-		int low = std::min(new_position.x, board_position.x);
-		int high = std::max(new_position.x, board_position.x);
-		for (int i = low + 1; i < high; i++) {
-			ChessPiece* piece = board->GetPiece({ i, new_position.y });
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-		}
+	bool can_move = false;
 
-		if (can_move) {
-			if (board->IsTherePieceOn(new_position)) {
-				if (board->GetPiece(new_position)->GetColor() != color)
-					return true;
-			}
-			else
+	if (new_position.y == board_position.y) 
+		can_move = SearchHorizontalLines({ board_position.x, new_position.x }, board_position.y);	
+	else if (new_position.x == board_position.x) 
+		can_move = SearchVerticalLines({ board_position.y, new_position.y }, board_position.x);
+	
+	if (can_move) {
+		if (board->IsTherePieceOn(new_position)) {
+			if (board->GetPiece(new_position)->GetColor() != color)
 				return true;
 		}
-	}
-	else if (new_position.x == board_position.x) {
-		bool can_move = true;
-		int low = std::min(new_position.y, board_position.y);
-		int high = std::max(new_position.y, board_position.y);
-		for (int i = low + 1; i < high; i++) {
-			ChessPiece* piece = board->GetPiece({ new_position.x, i });
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-		}
-
-		if (can_move) {
-			if (board->IsTherePieceOn(new_position)) {
-				if (board->GetPiece(new_position)->GetColor() != color)
-					return true;
-			}
-			else
-				return true;
-		}
+		else
+			return true;
 	}
 
 	return false;
@@ -156,7 +179,7 @@ void Knight::MovePiece() {
 
 bool Knight::CanPieceGoHere(const Ember::IVec2& new_position) {
 	wanting_position = new_position;
-	for (int i = 0; i < 8; i++) 
+	for (int i = 0; i < KNIGHT_MOVES; i++)
 		if (board_position.x + knight_move_offsets[i].x == new_position.x && board_position.y + knight_move_offsets[i].y == new_position.y) {
 			if (board->IsTherePieceOn(new_position)) {
 				if (board->GetPiece(new_position)->GetColor() != color)
@@ -185,32 +208,10 @@ bool Bishop::CanPieceGoHere(const Ember::IVec2& new_position) {
 	difference.x = abs(difference.x);
 	difference.y = abs(difference.y);
 
-	Ember::IVec2 direction = { -1, -1 };
-	if (new_position.x > board_position.x)
-		direction.x = 1;
-	if (new_position.y > board_position.y)
-		direction.y = 1;
+	Ember::IVec2 direction = FindDiagnolDirection();
 
-	if (difference.x == difference.y) {
-		bool can_move = true;
-		Ember::IVec2 test_spots = board_position;
-		while (test_spots != new_position) {
-			ChessPiece* piece = board->GetPiece(test_spots);
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-			test_spots += direction;
-		}
-		if (can_move) {
-			if (board->IsTherePieceOn(new_position)) {
-				if (board->GetPiece(new_position)->GetColor() != color)
-					return true;
-			}
-			else
-				return true;
-		}
-	}
+	if (difference.x == difference.y) 
+		return SearchDiagnols(direction);
 
 	return false;
 }
@@ -231,74 +232,25 @@ bool Queen::CanPieceGoHere(const Ember::IVec2& new_position) {
 	difference.x = abs(difference.x);
 	difference.y = abs(difference.y);
 
-	Ember::IVec2 direction = { -1, -1 };
-	if (new_position.x > board_position.x)
-		direction.x = 1;
-	if (new_position.y > board_position.y)
-		direction.y = 1;
+	Ember::IVec2 direction = FindDiagnolDirection();
 
-	if (difference.x == difference.y) {
-		bool can_move = true;
-		Ember::IVec2 test_spots = board_position;
-		while (test_spots != new_position) {
-			ChessPiece* piece = board->GetPiece(test_spots);
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-			test_spots += direction;
-		}
-		if (can_move) {
-			if (board->IsTherePieceOn(new_position)) {
-				if (board->GetPiece(new_position)->GetColor() != color)
-					return true;
-			}
-			else
+	if (difference.x == difference.y) 
+		return SearchDiagnols(direction);
+
+	bool can_move = false;
+
+	if (new_position.y == board_position.y)
+		can_move = SearchHorizontalLines({ board_position.x, new_position.x }, board_position.y);
+	else if (new_position.x == board_position.x)
+		can_move = SearchVerticalLines({ board_position.y, new_position.y }, board_position.x);
+
+	if (can_move) {
+		if (board->IsTherePieceOn(new_position)) {
+			if (board->GetPiece(new_position)->GetColor() != color)
 				return true;
 		}
-	}
-
-	if (new_position.y == board_position.y) {
-		bool can_move = true;
-		int low = std::min(new_position.x, board_position.x);
-		int high = std::max(new_position.x, board_position.x);
-		for (int i = low + 1; i < high; i++) {
-			ChessPiece* piece = board->GetPiece({ i, new_position.y });
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-		}
-
-		if (can_move) {
-			if (board->IsTherePieceOn(new_position)) {
-				if (board->GetPiece(new_position)->GetColor() != color)
-					return true;
-			}
-			else
-				return true;
-		}
-	}
-	else if (new_position.x == board_position.x) {
-		bool can_move = true;
-		int low = std::min(new_position.y, board_position.y);
-		int high = std::max(new_position.y, board_position.y);
-		for (int i = low + 1; i < high; i++) {
-			ChessPiece* piece = board->GetPiece({ new_position.x, i });
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-		}
-
-		if (can_move) {
-			if (board->IsTherePieceOn(new_position)) {
-				if (board->GetPiece(new_position)->GetColor() != color)
-					return true;
-			}
-			else
-				return true;
-		}
+		else
+			return true;
 	}
 
 	return false;
@@ -311,32 +263,35 @@ void King::Initialize() {
 }
 
 void King::MovePiece() {
-	if (is_going_to_castle != NOT_CASTLE) {
-		if (is_going_to_castle == LEFT_CASTLE) {
-			Rook* left_rook = GetRook({ 0, board_position.y });
-			board->MovePiece(this, { 2, board_position.y });
-			board->MovePiece(left_rook, { 3, left_rook->board_position.y });
-			board_position.x = 2;
-			left_rook->board_position.x = 3;
-			left_rook->can_castle = false;
-			can_castle = false;
-		}
-		else if(is_going_to_castle == RIGHT_CASTLE) {
-			Rook* right_rook = GetRook({ BOARD_WIDTH - 1, board_position.y });
-			board->MovePiece(this, { 6, board_position.y });
-			board->MovePiece(right_rook, { 5, right_rook->board_position.y });
-
-			board_position.x = 6;
-			right_rook->board_position.x = 5;
-			right_rook->can_castle = false;
-			can_castle = false;
-		}
-		is_going_to_castle = NOT_CASTLE;
+	if (is_going_to_castle == LEFT_CASTLE) {
+		Rook* left_rook = GetRook({ 0, board_position.y });
+		if (board_position.x == 3) 
+			Castle(left_rook, { 1, 2 });
+		else 
+			Castle(left_rook, { 2, 3 });
+	}
+	else if(is_going_to_castle == RIGHT_CASTLE) {
+		Rook* right_rook = GetRook({ BOARD_WIDTH - 1, board_position.y });
+		if (board_position.x == 4) 
+			Castle(right_rook, { 6, 5 });
+		else 
+			Castle(right_rook, { 5, 4 });
 	}
 	else {
 		can_castle = false;
 		Capture(wanting_position);
 	}
+}
+
+void King::Castle(Rook* rook, const Ember::IVec2& positions) {
+	board->MovePiece(this, { positions.x, board_position.y });
+	board->MovePiece(rook, { positions.y, rook->board_position.y });
+
+	board_position.x = positions.x;
+	rook->board_position.x = positions.y;
+	rook->can_castle = false;
+	can_castle = false;
+	is_going_to_castle = NOT_CASTLE;
 }
 
 bool King::CanPieceGoHere(const Ember::IVec2& new_position) {
@@ -356,17 +311,7 @@ bool King::CanPieceGoHere(const Ember::IVec2& new_position) {
 	else if (can_castle) {
 		Rook* left_rook = GetRook({ 0, new_position.y });
 		Rook* right_rook = GetRook({ BOARD_WIDTH - 1 , new_position.y });
-		
-		bool can_move = true;
-		int low = std::min(new_position.x, board_position.x);
-		int high = std::max(new_position.x, board_position.x);
-		for (int i = low + 1; i < high; i++) {
-			ChessPiece* piece = board->GetPiece({ i, new_position.y });
-			if (piece != nullptr && piece != this) {
-				can_move = false;
-				break;
-			}
-		}
+		bool can_move = SearchHorizontalLines({ new_position.x, board_position.x }, new_position.y);
 
 		if(left_rook != nullptr)
 			if (left_rook->can_castle && can_move && left_rook->GetBoardPosition() == Ember::IVec2(new_position.x, new_position.y)) {

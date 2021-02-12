@@ -27,7 +27,7 @@ public:
 	virtual void Initialize() { }
 	virtual bool CanPieceGoHere(const Ember::IVec2& new_position) { return false; }
 	virtual void MovePiece() { }
-	virtual std::vector<Ember::IVec2> GenerateAllPossibleMoves();
+	virtual std::vector<Ember::IVec2> GeneratePseudoMoves();
 	bool Capture(const Ember::IVec2& new_position);
 protected:
 	ChessBoard* board;
@@ -36,11 +36,15 @@ protected:
 	Ember::IVec2 board_position;
 	Ember::IVec2 wanting_position;
 
+	bool SearchHorizontalLines(const Ember::IVec2& search_between, int base_position);
+	bool SearchVerticalLines(const Ember::IVec2& search_between, int base_position);
+	bool SearchDiagnols(const Ember::IVec2& direction);
+	Ember::IVec2 FindDiagnolDirection();
+
 	void SeekSpriteLocation() {
 		if (color == PieceColor::BLACK)
 			spritesheet_location += 6;
 	}
-
 };
 
 typedef ChessPiece* (__stdcall* CreateChessPieceFn)(void);
@@ -78,7 +82,8 @@ public:
 
 	static ChessPiece* __stdcall Create() { return new Knight(); }
 private:
-	const Ember::IVec2 knight_move_offsets[8] = {
+	static const int KNIGHT_MOVES = 8;
+	const Ember::IVec2 knight_move_offsets[KNIGHT_MOVES] = {
 		{ 1, -2 }, { 2, -1 }, { 2, 1 }, { 1, 2 },
 		{ -1, 2 }, { -2, 1 }, { -2, -1 }, { -1, -2}
 	};
@@ -117,10 +122,11 @@ public:
 	static ChessPiece* __stdcall Create() { return new King(); }
 private: 
 	bool can_castle = true;
-
 	int is_going_to_castle = NOT_CASTLE;
 
+	Rook* castling_rook = nullptr;
 	Rook* GetRook(const Ember::IVec2& rook_position);
+	void Castle(Rook* rook, const Ember::IVec2& positions);
 };
 
 class ChessPieceFactory {

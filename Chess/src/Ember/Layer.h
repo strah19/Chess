@@ -6,9 +6,12 @@
 #include <functional>
 
 namespace Ember {
+	static int un_named_counter = 1;
+	
 	class Layer {
 	public:
 		Layer(const std::string& name) : layer_name(name) { }
+		Layer() : layer_name("layer" + std::to_string(un_named_counter)) { un_named_counter++; }
 		std::string Name() { return layer_name; }
 	private:
 		std::string layer_name;
@@ -21,6 +24,8 @@ namespace Ember {
 		};
 
 		EventStack(const std::string& first_name);
+		EventStack() : current_layer(0) { }
+
 		EventStackError SetCurrentLayer(const std::string& name);
 		EventStackError AddLayer(const std::string& name);
 		EventStackError DeleteLayer(const std::string& name);
