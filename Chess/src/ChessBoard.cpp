@@ -156,9 +156,8 @@ bool ChessBoard::Checkmate(PieceColor current_player_color) {
 			}
 		}
 	}
-	else {
+	else 
 		check_mate = false;
-	}
 
 	return check_mate;
 }
@@ -227,7 +226,6 @@ void ChessBoard::Flip() {
 		for (int i = 0; i < 8; i++)
 			board[j][i] = t[i];
 	}
-	Log();
 }
 
 PieceColor FindPieceColor(char piece) {
@@ -245,4 +243,24 @@ char GetTypeCharacterFromColor(char piece, PieceColor color) {
 	}
 
 	return piece;
+}
+
+void Promoter::Promote(ChessBoard* chess_board, char promotion_type) {
+	if (current_piece != nullptr) {
+		current_piece->SetBoardPosition({ -1, -1 });
+		chess_board->GetPieces().push_back(ChessPieceFactory::Get()->CreatePiece((GetTypeCharacterFromColor(promotion_type, current_piece->GetColor()))));
+		chess_board->GetPieces().back()->SetColor(current_piece->GetColor());
+		chess_board->GetPieces().back()->SetBoardPosition(Ember::IVec2(chess_board->GetLatestMove().w, chess_board->GetLatestMove().h));
+		chess_board->GetPieces().back()->SetParentBoard(chess_board);
+		chess_board->GetPieces().back()->Initialize();
+		chess_board->board[chess_board->GetLatestMove().w][chess_board->GetLatestMove().h] = GetTypeCharacterFromColor(promotion_type, current_piece->GetColor());
+		need_deleting.push_back(chess_board->GetPieces().size() - 1);
+	}
+}
+
+void Promoter::Reset(ChessBoard* chess_board) {
+	for (auto& n : need_deleting) {
+		chess_board->GetPieces().erase(chess_board->GetPieces().begin() + n);
+	}
+	need_deleting.clear();
 }

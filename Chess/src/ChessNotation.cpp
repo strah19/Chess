@@ -43,6 +43,14 @@ void ChessNotator::AfterMove() {
 	notation_buffer << BOARD_WIDTH - (latest_move_end_spot.y + 1) + 1;
 
 	chess_notations.push_back(notation_buffer.str());
+
+	if (piece_type == 'P')
+		CheckForPromotion(latest_move_end_spot);
+}
+
+void ChessNotator::CheckForPromotion(const Ember::IVec2& latest_move) {
+	if (latest_move.y == 8 || latest_move.y == 0)
+		promotion_possible = true;
 }
 
 bool ChessNotator::MultiplePiecesCanGoHere(PieceColor color, const Ember::IVec2& attacking_square) {

@@ -2,10 +2,9 @@
 #define CHESS_BOARD_H
 
 #include <vector>
+#include <unordered_map>
 
 #include "ChessPieces.h"
-
-constexpr int CHESS_PIECE_NUM = 16;
 
 constexpr int BOARD_WIDTH = 8;
 constexpr int BOARD_HEIGHT = 8;
@@ -39,7 +38,6 @@ public:
 	bool Checkmate(PieceColor current_player_color);
 	std::vector<Ember::IVec2> GenerateLegalMoves(ChessPiece* piece);
 	bool Check(PieceColor current_player_color);
-	void AddPiece(ChessPiece* piece) { chess_pieces.push_back(piece); }
 	Ember::Rect GetLatestMove() const { return latest_move; }
 	char GetTypeFromPosition(const Ember::IVec2& position) { return board[position.y][position.x]; }
 	char board[BOARD_WIDTH][BOARD_HEIGHT];
@@ -51,10 +49,21 @@ public:
 	PieceColor GetSideOnTop() const { return side_starting_on_top; }
 private:
 	bool captured_flag = false;
+
 	PieceColor side_starting_on_top= PieceColor::BLACK;
 
 	std::vector<ChessPiece*> chess_pieces;
 	Ember::Rect latest_move = { 0, 0, 0, 0 };
+};
+
+class Promoter {
+public:
+	inline void SetPromotionPawn(ChessPiece* piece) { current_piece = piece; }
+	void Promote(ChessBoard* chess_board, char promotion_type);
+	void Reset(ChessBoard* chess_board);
+private:
+	ChessPiece* current_piece;
+	std::vector<int> need_deleting;
 };
 
 PieceColor FindPieceColor(char piece);
