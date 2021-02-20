@@ -16,6 +16,8 @@ public:
 	std::vector<std::string>& GetNotations() { return chess_notations; }
 	inline bool PromotionPossible() const { return promotion_possible; }
 	inline void AddPromotionTypeId(char type) { chess_notations.back() += toupper(int(type)); promotion_possible = false; }
+	inline void AddCheckMateId() { chess_notations.back() += '#'; }
+	inline void AddCheckId() { chess_notations.back() += '+'; }
 private:
 	bool MultiplePiecesCanGoHere(PieceColor color, const Ember::IVec2& attacking_square);
 	void CheckForPromotion(const Ember::IVec2& latest_move);

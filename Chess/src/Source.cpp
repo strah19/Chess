@@ -138,6 +138,22 @@ public:
 			new_line += 20;
 		}
 
+		int key_bind_offsets = 10 + top_down_padding.x;
+		const int y_key_offset = 20;
+		Text("KeyBindings: ", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+		key_bind_offsets += y_key_offset;
+		Text("Queen Promotions = 'Q' ", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+		key_bind_offsets += y_key_offset;
+		Text("Bishop Promotions = 'B' ", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+		key_bind_offsets += y_key_offset;
+		Text("Rook Promotions = 'R' ", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+		key_bind_offsets += y_key_offset;
+		Text("Knight Promotions = 'K' ", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+		key_bind_offsets += y_key_offset;
+		Text("Flip Board = 'F' ", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+		key_bind_offsets += y_key_offset;
+		Text("Restart Board = 'S'", { side_padding.x + (BOARD_HEIGHT * BOARD_SQUARE_HEIGHT) + 10, key_bind_offsets });
+
 		if (game_over) {
 			renderer->Rectangle(Ember::Rect({ 0, 0, properties->width, properties->height }), { 0, 0, 0, 100 });
 			properties->name = "Checkmate!";
@@ -169,8 +185,10 @@ public:
 					CalculatePiecesAction(current_selected_piece);
 					promoter.SetPromotionPawn(current_selected_piece);
 
-					if (chess_board.Checkmate(PieceColor::WHITE) || chess_board.Checkmate(PieceColor::BLACK)) 
+					if (chess_board.Checkmate(PieceColor::WHITE) || chess_board.Checkmate(PieceColor::BLACK)) {
 						game_over = true;
+						notator.AddCheckMateId();
+					}
 					else if (!game_over) 
 						Stalemate();
 				}
@@ -201,6 +219,8 @@ public:
 					notator.AfterMove();
 
 					OnPieceMovement();
+					if (chess_board.Check(current_player_color))
+						notator.AddCheckId();
 
 					break;
 				}

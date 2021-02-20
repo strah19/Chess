@@ -23,7 +23,7 @@ void ChessNotator::AfterMove() {
 	char piece_type = chess_board->board[latest_move_end_spot.y][latest_move_end_spot.x];
 	piece_type = toupper(piece_type);
 
-	char before_move_file = ColToChessFileConverter(latest_move_start_spot.x + 1);
+	char before_move_file = ColToChessFileConverter(BOARD_WIDTH - (latest_move_start_spot.x + 1) + 1);
 
 	std::stringstream notation_buffer;
 
@@ -36,11 +36,37 @@ void ChessNotator::AfterMove() {
 		chess_board->ResetCaptureFlag();
 	}
 
-	if (piece_type != 'P')
+	if (piece_type != 'P' && piece_type != ' ')
 		notation_buffer << piece_type;
 
-	notation_buffer << ColToChessFileConverter(latest_move_end_spot.x + 1);
-	notation_buffer << BOARD_WIDTH - (latest_move_end_spot.y + 1) + 1;
+	if (chess_board->GetSideOnTop() == PieceColor::WHITE) {
+		notation_buffer << ColToChessFileConverter(BOARD_WIDTH - (latest_move_end_spot.x + 1) + 1);
+		int t = BOARD_WIDTH - (latest_move_end_spot.y + 1) + 1;
+		notation_buffer << BOARD_WIDTH - (t + 1) + 2;
+	}
+	else {
+		notation_buffer << ColToChessFileConverter(latest_move_end_spot.x + 1);
+		notation_buffer << BOARD_WIDTH - (latest_move_end_spot.y + 1) + 1;
+	}
+
+	const Ember::IVec2 start_rook_pos[4] = { {0, 0}, {7, 7}, {0, 7}, {7, 0} };
+
+	ChessPiece* king = chess_board->GetPieceFromCharacter(GetTypeCharacterFromColor('k', latest_moved_piece->GetColor()));
+	if(king) {
+		for (int i = 0; i < 4; i++) {
+			if (latest_move_start_spot == start_rook_pos[i] && (latest_move_end_spot.x == 5 || latest_move_end_spot.x == 1) && abs(king->GetBoardPosition().x - latest_move_end_spot.x) == 1) {
+				notation_buffer = std::stringstream(std::string());
+				notation_buffer << "0-0";
+				break;
+			}
+			else if (latest_move_start_spot == start_rook_pos[i] && (latest_move_end_spot.x == 3 || latest_move_end_spot.x == 4) && abs(king->GetBoardPosition().x - latest_move_end_spot.x) == 1) {
+				notation_buffer = std::stringstream(std::string());
+				notation_buffer << "0-0-0";
+				break;
+			}
+		}
+	}
+
 
 	chess_notations.push_back(notation_buffer.str());
 
@@ -54,17 +80,24 @@ void ChessNotator::CheckForPromotion(const Ember::IVec2& latest_move) {
 }
 
 bool ChessNotator::MultiplePiecesCanGoHere(PieceColor color, const Ember::IVec2& attacking_square) {
-	int num_of_attackers = 0;
+	std::vector<ChessPiece*> attackers;
 	for (auto& piece : chess_board->GetPieces()) {
 		if (piece->GetColor() == color) {
 			auto l = chess_board->GenerateLegalMoves(piece);
 			for (auto& move : l) {
-				if (move == attacking_square && chess_board->GetPiece(attacking_square) != nullptr) {
-					num_of_attackers++;
-				}
+				if (move == attacking_square && chess_board->GetPiece(attacking_square)) 
+					attackers.push_back(piece);
 			}
 		}
 	}
-
-	return (num_of_attackers > 1);
+	if (!attackers.empty()) {
+		char check_duplicate = chess_board->board[attackers[0]->GetBoardPosition().y][attackers[0]->GetBoardPosition().x];
+		for (size_t i = 1; i < attackers.size(); i++) {
+			if (chess_board->board[attackers[i]->GetBoardPosition().y][attackers[i]->GetBoardPosition().x] == check_duplicate)
+				return true;
+			
+			check_duplicate = chess_board->board[attackers[i]->GetBoardPosition().y][attackers[i]->GetBoardPosition().x];
+		}
+	}
+	return false;
 }

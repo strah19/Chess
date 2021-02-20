@@ -1,31 +1,10 @@
-NEW GAME: e4 d5 Nc3 xe4 xNe4 Qd4 d3 Qd5 Qf3 Bg4 
-Qf4 Bf5 Be2 Nf6 c4 Qa5 Bd2 e6 Rd1 fxBe4 
-dxe4 xNe4 xQe4 Bc5 Nf3 xBf2 Rf1 Bg3 xg3 Qb6 
-Ne5 Nc6 Bf3 xNe5 xQe5 Rf8 Be3 xQe3 xQe3 f5 
-xQe6 Rf7 xQf7 Kh8 Qf8 xRf8 xBb7 
-NEW GAME: a4 b6 a5 g6 xb6 axb6 
-NEW GAME: a4 a6 e3 f6 xBa6 e6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8 Rb5 
-NEW GAME: a4 a6 e3 f6 xBa6 e6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8 
-NEW GAME: a4 a6 e3 f6 xBa6 d6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8 
-NEW GAME: a4 a6 e3 e6 xBa6 c6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8Q 
-NEW GAME: a4 a6 e3 d6 xBa6 c6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8Q 
-NEW GAME: a4 a6 e3 e6 xBa6 d6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8Q Rc4 
-NEW GAME: a4 
-NEW GAME: a4 a6 e3 e6 xBa6 e5 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8Q bxRb7 xQb7 x b7 e4 
-NEW GAME: a4 
-NEW GAME: a4 b5 xb5 
-NEW GAME: a4 a6 e3 f6 xBa6 c6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8Q bxRb7 xQb7 x b7 
-NEW GAME: a4 a6 e3 f6 xBa6 d6 xBb7 Ra6 a5 Rb6 
-a6 Rb5 a7 Rb4 a8Q bxRb7 
-NEW GAME: a4 a6 e3 e6 xBa6 d6 xBb7 Ra6 
-NEW GAME: a4 a6 e3 e6 xBa6 
-NEW GAME: c3 d6 Qa4 Qd7 Qa6 
-NEW GAME: Nc3 e6 Na4 f6 Nb6 
+NEW GAME: e4 f6 d3 d6 Qh5 Kd7 Qf5 
+NEW GAME: e4 f6 d3 d6 Qh5+ Kd7 Qf5+ e6 Qb5+ c6 
+Qa4 Ke7 xQa7 xRa7 
+NEW GAME: e5 
+NEW GAME: e4 e4 Nf3 
+NEW GAME: e5 Nc3 
+NEW GAME: e3 Nc5 Nf2 
+NEW GAME: e4 e5 Nf3 Nc6 Bb5 a6 xBc6 gxc6 
+NEW GAME: d4 d5 f3 e5 c3 c5 e3 exd4 exd4 g5 
+xc5 g4 h4 xh3 

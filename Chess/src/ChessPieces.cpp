@@ -60,11 +60,11 @@ bool ChessPiece::SearchDiagnols(const Ember::IVec2& direction) {
 	if (board->IsTherePieceOn(wanting_position)) {
 		if (board->GetPiece(wanting_position)->GetColor() != color)
 			return true;
+		else
+			return false;
 	}
-	else
-		return true;
 	
-	return false;
+	return true;
 }
 
 Ember::IVec2 ChessPiece::FindDiagnolDirection() {
@@ -198,7 +198,7 @@ void Bishop::Initialize() {
 }
 
 void Bishop::MovePiece() {
-	Capture(wanting_position);
+	Capture(wanting_position); 
 }
 
 bool Bishop::CanPieceGoHere(const Ember::IVec2& new_position) {
